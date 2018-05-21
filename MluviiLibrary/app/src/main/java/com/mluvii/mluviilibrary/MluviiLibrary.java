@@ -32,8 +32,6 @@ public class MluviiLibrary {
      * Interface na volani Android library z webview
      */
 
-
-
     private static class InterfaceBetweenJavascriptAndLibrary{
 
         /**
@@ -136,11 +134,13 @@ public class MluviiLibrary {
      */
     public static void runChat(){
         if(Build.VERSION.SDK_INT  >= 19) {
-            Log.d("Cool evaluate");
+            Log.d("MLUVII_SDK","Cool evaluate");
             mluviiWebView.evaluateJavascript(injectedString, null);
+            mluviiWebView.evaluateJavascript("openChat()",null);
         } else {
-            Log.d("Low evaluate");
-            mluviiWebView.loadUrl("javascript: openChat()");
+            Log.d("MLUVII_SDK","Low evaluate");
+			mluviiWebView.loadUrl("javascript: "+injectedString);
+            mluviiWebView.loadUrl("javascript: openChat()");            
         }
     }
 
@@ -188,7 +188,17 @@ public class MluviiLibrary {
                 mluviiWebView.loadUrl(CHAT_URL);
             }
         });
+    }
 
+    public static void addCustomData(String name, String value){
+        String customDataString = "$owidget.addCustomData("+name+","+value+")";
+        if(Build.VERSION.SDK_INT  >= 19) {
+            Log.d("MLUVII_SDK","Cool evaluate");
+            mluviiWebView.evaluateJavascript(customDataString, null);
+        } else {
+            Log.d("MLUVII_SDK","Low evaluate");
+            mluviiWebView.loadUrl("javascript: "+customDataString);
+        }
     }
 
 

@@ -161,6 +161,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 if(status == 1){
+					MluviiLibrary.addCustomData("additionalParam","testValue");
                     MluviiLibrary.runChat();
                     RelativeLayout.LayoutParams openedMluviiParams = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
                     mluviiWebView.setLayoutParams(openedMluviiParams);
