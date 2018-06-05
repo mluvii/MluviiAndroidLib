@@ -227,11 +227,6 @@ public class MluviiLibrary {
                                                }
 
                                                @Override
-                                               public void onReceivedSslError(WebView view, SslErrorHandler handler, SslError error) {
-                                                   handler.proceed(); // Ignore SSL certificate errors
-                                               }
-
-                                               @Override
                                                public void onPageFinished(WebView view, String url) {
                                                    if(Build.VERSION.SDK_INT  >= 19) {
                                                        //mluviiWebView.evaluateJavascript(injectedString, null);
