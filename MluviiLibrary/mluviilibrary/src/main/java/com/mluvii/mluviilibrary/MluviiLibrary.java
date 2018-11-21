@@ -1,13 +1,13 @@
 package com.mluvii.mluviilibrary;
 
 import android.app.Activity;
-import android.net.http.SslError;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Looper;
 import android.util.Log;
+import android.webkit.ConsoleMessage;
 import android.webkit.JavascriptInterface;
-import android.webkit.SslErrorHandler;
+import android.webkit.PermissionRequest;
 import android.webkit.WebChromeClient;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
@@ -71,18 +71,20 @@ public class MluviiLibrary {
          */
         @JavascriptInterface
         public void closeChat(){
-            resetUrl();
-            if(closeChatFunc != null){
-                try {
-                    closeChatFunc.call();
-                } catch (Exception e) {
-                    e.printStackTrace();
+            Log.d("MLUVII_JAVASCRIPT","Close called");
+                resetUrl();
+                if (closeChatFunc != null) {
+                    try {
+                        closeChatFunc.call();
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
                 }
-            }
         }
     }
 
     private static WebView mluviiWebView = null;
+    private static WebView mluviiVideoWebView = null;
     private static Callable<Void> onlineFunc = null;
     private static Callable<Void> offlineFunc = null;
     private static Callable<Void> busyFunc = null;
@@ -137,10 +139,20 @@ public class MluviiLibrary {
     public static void runChat(){
         if(Build.VERSION.SDK_INT  >= 19) {
             Log.d("MLUVII_SDK","Cool evaluate");
-            mluviiWebView.evaluateJavascript(injectedString, null);
+            mluviiWebView.evaluateJavascript("openChat()", null);
         } else {
             Log.d("MLUVII_SDK","Low evaluate");
             mluviiWebView.loadUrl("javascript: openChat()");
+        }
+    }
+
+    public static void runVideo(){
+        if(Build.VERSION.SDK_INT  >= 19) {
+            Log.d("MLUVII_SDK","Cool evaluate");
+            mluviiVideoWebView.evaluateJavascript("$owidget.openAppOnCurrentPage('av');", null);
+        } else {
+            Log.d("MLUVII_SDK","Low evaluate");
+            mluviiVideoWebView.loadUrl("javascript: $owidget.openAppOnCurrentPage('av');");
         }
     }
 
@@ -179,16 +191,17 @@ public class MluviiLibrary {
     }
 
     public static void resetUrl(){
-        //Log.d("MLUVII_URL", "RESET_URL");
+        Log.d("MLUVII_URL_LIB", "RESET_URL");
         Handler handler = new Handler(Looper.getMainLooper());
         handler.post(new Runnable(){
 
             @Override
             public void run(){
+                Log.d("MLUVII_URL_RESET", "RESETTED_TO: "+CHAT_URL);
                 mluviiWebView.loadUrl(CHAT_URL);
+
             }
         });
-
     }
 
 
@@ -213,7 +226,7 @@ public class MluviiLibrary {
                                                     * Otevre chatove URL v okne chatu
                                                     */
                                                    Log.d("MLUVII_URL_CHANGE","changing url to "+url);
-                                                   if(url.contains("GuestFrame?") || url.contains(CHAT_URL) ) {
+                                                   if(url.contains("GuestFrame?") || url.contains(CHAT_URL) || url.contains("widget") ) {
                                                        view.loadUrl(url);
                                                        return false;
                                                    } else {
@@ -242,16 +255,20 @@ public class MluviiLibrary {
              */
             mluviiWebView.setWebChromeClient(new WebChromeClient(){
 
-                /*@Override
+                @Override
                 public void onPermissionRequest(final PermissionRequest request) {
-                    request.grant(request.getResources());
-                }*/
+                    if(Build.VERSION.SDK_INT  >= 21) {
+                        Log.d("MLUVII","Permission request granted");
+                        request.grant(request.getResources());
+                        //request.grant(new String[]{PermissionRequest.RESOURCE_VIDEO_CAPTURE});
+                    }
+                }
 
-                /*@Override
+                @Override
                 public boolean onConsoleMessage(ConsoleMessage consoleMessage) {
-                    Log.d("MluviiLib", "CNSL_MSG: "+consoleMessage.message());
+                    Log.d("MluviiConsole", "CNSL_MSG: "+consoleMessage.message());
                     return true;
-                }*/
+                }
             });
 
             mluviiWebView.getSettings().setJavaScriptEnabled(true);
@@ -262,6 +279,83 @@ public class MluviiLibrary {
             mluviiWebView.loadUrl(CHAT_URL);
         }
         return mluviiWebView;
+    }
+
+    /**
+     * Function that returns webview optimized for mluvii widget
+     * @param activity Activity for creating webview
+     * @param url url to load in webview
+     * @return WebView with loaded page with URL from param
+     */
+    public static WebView getMluviiVideoWebView(final Activity activity, String url, String companyId, String tenantId, String presetName, String language){
+        if(mluviiVideoWebView == null) {
+            CHAT_URL = createUrlString(url,companyId,tenantId,presetName,language);
+            Log.d("MLUVII_URL", CHAT_URL);
+            mluviiVideoWebView = new WebView(activity);
+            /**
+             * Optimized WebviewClient without SSL ERROR to use it on localhost and not allowing to show url in native browser
+             */
+            mluviiVideoWebView.setWebViewClient(new WebViewClient(){
+                                               @Override
+                                               public boolean shouldOverrideUrlLoading(WebView view, String url) {
+                                                   /**
+                                                    * Otevre chatove URL v okne chatu
+                                                    */
+                                                   Log.d("MLUVII_URL_CHANGE","changing url to "+url);
+                                                   if(url.contains("GuestFrame?") || url.contains(CHAT_URL) || url.contains("widget") ) {
+                                                       view.loadUrl(url);
+                                                       return false;
+                                                   } else {
+                                                       /**
+                                                        * Otevre jine URL (obrazek, file ...)
+                                                        */
+                                                       view.getContext().startActivity(
+                                                               new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
+                                                       return true;
+                                                   }
+                                               }
+
+                                               @Override
+                                               public void onPageFinished(WebView view, String url) {
+                                                   if(Build.VERSION.SDK_INT  >= 19) {
+                                                       mluviiVideoWebView.evaluateJavascript(injectedString, null);
+                                                   } else{
+                                                       mluviiVideoWebView.loadUrl("javascript: "+injectedString);
+                                                   }
+                                               }
+
+                                           }
+            );
+            /**
+             * Optimized WebChromeClient to Pass console messages and request permissions for camera, mic, etc. for future use
+             */
+            mluviiVideoWebView.setWebChromeClient(new WebChromeClient(){
+
+                @Override
+                public void onPermissionRequest(final PermissionRequest request) {
+                    if(Build.VERSION.SDK_INT  >= 21) {
+                        Log.d("MLUVII","Permission request granted, " +request.getResources());
+
+                        request.grant(request.getResources());
+                        //request.grant(new String[]{PermissionRequest.RESOURCE_VIDEO_CAPTURE, PermissionRequest.RESOURCE_AUDIO_CAPTURE});
+                    }
+                }
+
+                @Override
+                public boolean onConsoleMessage(ConsoleMessage consoleMessage) {
+                    Log.d("MluviiConsole", "CNSL_MSG: "+consoleMessage.message());
+                    return true;
+                }
+            });
+
+            mluviiVideoWebView.getSettings().setJavaScriptEnabled(true);
+            mluviiVideoWebView.getSettings().setDomStorageEnabled(true);
+            mluviiVideoWebView.addJavascriptInterface(new InterfaceBetweenJavascriptAndLibrary(),"mluviiLibrary");
+
+            mluviiVideoWebView.canGoBackOrForward(0);
+            mluviiVideoWebView.loadUrl(CHAT_URL);
+        }
+        return mluviiVideoWebView;
     }
 
 }
