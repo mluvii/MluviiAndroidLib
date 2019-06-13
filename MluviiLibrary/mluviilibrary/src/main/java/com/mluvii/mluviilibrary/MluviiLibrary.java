@@ -1,26 +1,27 @@
 package com.mluvii.mluviilibrary;
 
 import android.app.Activity;
+import android.content.ActivityNotFoundException;
 import android.net.Uri;
+import android.net.http.SslError;
 import android.os.Build;
 import android.os.Looper;
 import android.util.Log;
 import android.webkit.ConsoleMessage;
 import android.webkit.JavascriptInterface;
 import android.webkit.PermissionRequest;
+import android.webkit.SslErrorHandler;
+import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
+import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.content.Intent;
-
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.concurrent.Callable;
 import android.os.Handler;
-
-/**
- * Created by jaros on 2/23/2018.
- */
+import android.widget.Toast;
 
 public class MluviiLibrary {
 
@@ -31,8 +32,6 @@ public class MluviiLibrary {
     /**
      * Interface na volani Android library z webview
      */
-
-
 
     private static class InterfaceBetweenJavascriptAndLibrary{
 
@@ -72,14 +71,14 @@ public class MluviiLibrary {
         @JavascriptInterface
         public void closeChat(){
             Log.d("MLUVII_JAVASCRIPT","Close called");
-                resetUrl();
-                if (closeChatFunc != null) {
-                    try {
-                        closeChatFunc.call();
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
+            resetUrl();
+            if (closeChatFunc != null) {
+                try {
+                    closeChatFunc.call();
+                } catch (Exception e) {
+                    e.printStackTrace();
                 }
+            }
         }
     }
 
@@ -90,6 +89,13 @@ public class MluviiLibrary {
     private static Callable<Void> busyFunc = null;
     private static Callable<Void> closeChatFunc = null;
     private static Callable<Void> chatLoaded = null;
+    private static int REQUEST_SELECT_FILE = 65456;
+    private static Uri mCapturedImageURI = null;
+
+    private static ValueCallback<Uri[]>  valueCallbacks = null;
+    private static ValueCallback<Uri> valueCallback;
+
+    private static final String MLUVII_LIBRARY_LOG = "MLUVII_LIBRARY";
 
     private static String injectedString = "var _close = window.close; window.close = function (){ if(window['mluviiLibrary']){ window['mluviiLibrary'].closeChat(); } _close();}";
 
@@ -132,6 +138,21 @@ public class MluviiLibrary {
     public static void setCloseChatFunc(Callable<Void> function){
         closeChatFunc = function;
     }
+
+    /**
+     * Tato funkce vraci value callbacks potrebne pro nahravani souboru
+     */
+    public static ValueCallback<Uri[]> getFilePathCallbacks() { return valueCallbacks; }
+
+    /**
+     * Tato funkce vraci value callback potrebny pro nahravani souboru
+     */
+    public static ValueCallback<Uri> getFilePathCallback() { return valueCallback; }
+
+    /**
+     *  Nastaveni cisla, kterym se pozna pozadavek na sdileni souboru jdouci z mluvii library
+     */
+    public static void setSelectFileNumber(int number) { REQUEST_SELECT_FILE = number; }
 
     /**
      * Spusteni chatu na zatim skyte webview
@@ -204,7 +225,6 @@ public class MluviiLibrary {
         });
     }
 
-
     /**
      * Function that returns webview optimized for mluvii widget
      * @param activity Activity for creating webview
@@ -213,6 +233,7 @@ public class MluviiLibrary {
      */
     public static WebView getMluviiWebView(final Activity activity, String url, String companyId, String tenantId, String presetName, String language){
         if(mluviiWebView == null) {
+
             CHAT_URL = createUrlString(url,companyId,tenantId,presetName,language);
             Log.d("MLUVII_URL", CHAT_URL);
             mluviiWebView = new WebView(activity);
@@ -269,11 +290,204 @@ public class MluviiLibrary {
                     Log.d("MluviiConsole", "CNSL_MSG: "+consoleMessage.message());
                     return true;
                 }
+
+                public boolean onShowFileChooser(WebView webView, ValueCallback<Uri[]> filePathCallback, FileChooserParams fileChooserParams) {
+                    // make sure there is no existing message
+                    if(Build.VERSION.SDK_INT >= 21) {
+                        valueCallbacks = filePathCallback;
+                        Intent intent = fileChooserParams.createIntent();
+                        intent.addCategory(Intent.CATEGORY_OPENABLE);
+                        intent.setType("*/*");
+                        try {
+                            Log.d("MLUVII","OPEN UPLOAD");
+                            activity.startActivityForResult(intent, REQUEST_SELECT_FILE);
+                        } catch (ActivityNotFoundException e) {
+                            Toast.makeText(activity, "Cannot open file chooser", Toast.LENGTH_LONG).show();
+                            return false;
+                        }
+                    }
+                    return true;
+                }
+
+                protected void openFileChooser(ValueCallback<Uri> filePathCallback)
+                {
+                    valueCallback = filePathCallback;
+                    Intent i = new Intent(Intent.ACTION_GET_CONTENT);
+                    i.addCategory(Intent.CATEGORY_OPENABLE);
+                    i.setType("*/*");
+                    activity.startActivityForResult(Intent.createChooser(i, "File Chooser"), REQUEST_SELECT_FILE);
+                }
+
+                public void openFileChooser(ValueCallback<Uri> uploadMsg, String acceptType) {
+                    valueCallback = uploadMsg;
+
+                    Intent i = new Intent(Intent.ACTION_GET_CONTENT);
+                    i.addCategory(Intent.CATEGORY_OPENABLE);
+                    i.setType("*/*");
+
+                    Intent chooserIntent = Intent.createChooser(i, "Image Chooser");
+                    activity.startActivityForResult(chooserIntent, REQUEST_SELECT_FILE);
+                }
+
+                public void openFileChooser(ValueCallback<Uri> uploadMsg,
+                                            String acceptType, String capture) {
+                    openFileChooser(uploadMsg, acceptType);
+                }
+
             });
 
             mluviiWebView.getSettings().setJavaScriptEnabled(true);
             mluviiWebView.getSettings().setDomStorageEnabled(true);
+            mluviiWebView.getSettings().setAllowFileAccess(true);
+            mluviiWebView.getSettings().setAllowContentAccess(true);
+            mluviiWebView.setWebContentsDebuggingEnabled(true);
             mluviiWebView.addJavascriptInterface(new InterfaceBetweenJavascriptAndLibrary(),"mluviiLibrary");
+
+            mluviiWebView.canGoBackOrForward(0);
+            mluviiWebView.loadUrl(CHAT_URL);
+        }
+        return mluviiWebView;
+    }
+
+    /**
+     * Function that returns webview optimized for mluvii widget and immediately opens chat window
+     * @param activity Activity for creating webview
+     * @param url url to load in webview
+     * @return WebView with loaded page with URL from param
+     */
+    public static WebView getAndRunMluviiWebView(final Activity activity, String url, String companyId, String tenantId, String presetName, String language){
+        if(mluviiWebView == null) {
+            CHAT_URL = createUrlString(url,companyId,tenantId,presetName,language);
+            Log.d("MLUVII_URL", CHAT_URL);
+            mluviiWebView = new WebView(activity);
+            /**
+             * Optimized WebviewClient without SSL ERROR to use it on localhost and not allowing to show url in native browser
+             */
+            mluviiWebView.setWebViewClient(new WebViewClient(){
+                                               @Override
+                                               public boolean shouldOverrideUrlLoading(WebView view, String url) {
+                                                   /**
+                                                    * Otevre chatove URL v okne chatu
+                                                    */
+                                                   Log.d("MLUVII_URL_CHANGE","changing url to "+url);
+                                                   if(url.contains("localhost")){
+                                                       String changedUrl = url.replace("localhost","10.0.2.2");
+                                                       Log.d("MLUVII_REPLACED_URL", changedUrl);
+                                                       view.loadUrl(changedUrl);
+                                                       return false;
+                                                   }
+                                                   if(url.contains("GuestFrame?") || url.contains(CHAT_URL) || url.contains("widget") ) {
+                                                       view.loadUrl(url);
+                                                       return false;
+                                                   } else {
+                                                       /**
+                                                        * Otevre jine URL (obrazek, file ...)
+                                                        */
+                                                       view.getContext().startActivity(
+                                                               new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
+                                                       return true;
+                                                   }
+                                               }
+
+                                               @Override
+                                               public void onPageFinished(WebView view, String url) {
+                                                   if(Build.VERSION.SDK_INT  >= 19) {
+                                                       mluviiWebView.evaluateJavascript(injectedString, null);
+                                                       runChat();
+                                                   } else{
+                                                       mluviiWebView.loadUrl("javascript: "+injectedString);
+                                                       runChat();
+                                                   }
+                                               }
+
+
+
+                                               @Override
+                                               public void onReceivedSslError(WebView view, SslErrorHandler handler, SslError error) {
+                                                   handler.proceed(); // Ignore SSL certificate errors
+                                               }
+                                           }
+            );
+
+            /**
+             * Optimized WebChromeClient to Pass console messages and request permissions for camera, mic, etc. for future use
+             */
+            mluviiWebView.setWebChromeClient(new WebChromeClient(){
+
+                @Override
+                public void onPermissionRequest(final PermissionRequest request) {
+                    if(Build.VERSION.SDK_INT  >= 21) {
+                        Log.d("MLUVII","Permission request granted");
+                        request.grant(request.getResources());
+                        //request.grant(new String[]{PermissionRequest.RESOURCE_VIDEO_CAPTURE});
+                    }
+                }
+
+                @Override
+                public boolean onConsoleMessage(ConsoleMessage consoleMessage) {
+                    Log.d("MluviiConsole", "CNSL_MSG: "+consoleMessage.message());
+                    return true;
+                }
+
+                public boolean onShowFileChooser(WebView webView, ValueCallback<Uri[]> filePathCallback, FileChooserParams fileChooserParams) {
+                    // make sure there is no existing message
+                    if(Build.VERSION.SDK_INT >= 21) {
+                        valueCallbacks = filePathCallback;
+
+                        Intent intent = fileChooserParams.createIntent();
+                        intent.addCategory(Intent.CATEGORY_OPENABLE);
+                        intent.setType("*/*");
+                        try {
+                            Log.d("MLUVII","OPEN UPLOAD");
+                            activity.startActivityForResult(intent, REQUEST_SELECT_FILE);
+                        } catch (ActivityNotFoundException e) {
+                            Toast.makeText(activity, "Cannot open file chooser", Toast.LENGTH_LONG).show();
+                            return false;
+                        }
+                    }
+                    return true;
+                }
+
+                protected void openFileChooser(ValueCallback<Uri> filePathCallback)
+                {
+                    valueCallback = filePathCallback;
+                    Intent i = new Intent(Intent.ACTION_GET_CONTENT);
+                    i.addCategory(Intent.CATEGORY_OPENABLE);
+                    i.setType("*/*");
+                    Log.d("MLUVII","OPEN UPLOAD");
+                    activity.startActivityForResult(Intent.createChooser(i, "File Chooser"), REQUEST_SELECT_FILE);
+                }
+
+                public void openFileChooser(ValueCallback<Uri> uploadMsg, String acceptType) {
+                    valueCallback = uploadMsg;
+
+                    Intent i = new Intent(Intent.ACTION_GET_CONTENT);
+                    i.addCategory(Intent.CATEGORY_OPENABLE);
+                    i.setType("*/*");
+
+                    // Create file chooser intent
+                    Intent chooserIntent = Intent.createChooser(i, "Image Chooser");
+
+                    // On select image call onActivityResult method of activity
+                    activity.startActivityForResult(chooserIntent, REQUEST_SELECT_FILE);
+                }
+
+                public void openFileChooser(ValueCallback<Uri> uploadMsg,
+                                            String acceptType, String capture) {
+                    Log.d("MLUVII","OPEN UPLOAD");
+                    openFileChooser(uploadMsg, acceptType);
+                }
+
+            });
+
+            mluviiWebView.getSettings().setJavaScriptEnabled(true);
+            mluviiWebView.getSettings().setDomStorageEnabled(true);
+            mluviiWebView.getSettings().setAllowFileAccess(true);
+            mluviiWebView.getSettings().setAllowContentAccess(true);
+            mluviiWebView.setWebContentsDebuggingEnabled(true);
+            mluviiWebView.addJavascriptInterface(new InterfaceBetweenJavascriptAndLibrary(),"mluviiLibrary");
+            WebSettings mWebSettings = mluviiWebView.getSettings();
+            mWebSettings.setAllowFileAccess(true);
 
             mluviiWebView.canGoBackOrForward(0);
             mluviiWebView.loadUrl(CHAT_URL);
@@ -296,35 +510,40 @@ public class MluviiLibrary {
              * Optimized WebviewClient without SSL ERROR to use it on localhost and not allowing to show url in native browser
              */
             mluviiVideoWebView.setWebViewClient(new WebViewClient(){
-                                               @Override
-                                               public boolean shouldOverrideUrlLoading(WebView view, String url) {
-                                                   /**
-                                                    * Otevre chatove URL v okne chatu
-                                                    */
-                                                   Log.d("MLUVII_URL_CHANGE","changing url to "+url);
-                                                   if(url.contains("GuestFrame?") || url.contains(CHAT_URL) || url.contains("widget") ) {
-                                                       view.loadUrl(url);
-                                                       return false;
-                                                   } else {
-                                                       /**
-                                                        * Otevre jine URL (obrazek, file ...)
-                                                        */
-                                                       view.getContext().startActivity(
-                                                               new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
-                                                       return true;
-                                                   }
-                                               }
+                                                    @Override
+                                                    public boolean shouldOverrideUrlLoading(WebView view, String url) {
+                                                        /**
+                                                         * Otevre chatove URL v okne chatu
+                                                         */
+                                                        Log.d("MLUVII_URL_CHANGE","changing url to "+url);
+                                                        if(url.contains("GuestFrame?") || url.contains(CHAT_URL) || url.contains("widget") ) {
+                                                            view.loadUrl(url);
+                                                            return false;
+                                                        } else {
+                                                            /**
+                                                             * Otevre jine URL (obrazek, file ...)
+                                                             */
+                                                            view.getContext().startActivity(
+                                                                    new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
+                                                            return true;
+                                                        }
+                                                    }
 
-                                               @Override
-                                               public void onPageFinished(WebView view, String url) {
-                                                   if(Build.VERSION.SDK_INT  >= 19) {
-                                                       mluviiVideoWebView.evaluateJavascript(injectedString, null);
-                                                   } else{
-                                                       mluviiVideoWebView.loadUrl("javascript: "+injectedString);
-                                                   }
-                                               }
+                                                    @Override
+                                                    public void onPageFinished(WebView view, String url) {
+                                                        if(Build.VERSION.SDK_INT  >= 19) {
+                                                            mluviiVideoWebView.evaluateJavascript(injectedString, null);
+                                                        } else{
+                                                            mluviiVideoWebView.loadUrl("javascript: "+injectedString);
+                                                        }
+                                                    }
 
-                                           }
+                                                    @Override
+                                                    public void onReceivedSslError(WebView view, SslErrorHandler handler, SslError error) {
+                                                        handler.proceed(); // Ignore SSL certificate errors
+                                                    }
+
+                                                }
             );
             /**
              * Optimized WebChromeClient to Pass console messages and request permissions for camera, mic, etc. for future use
@@ -346,10 +565,61 @@ public class MluviiLibrary {
                     Log.d("MluviiConsole", "CNSL_MSG: "+consoleMessage.message());
                     return true;
                 }
+
+                public boolean onShowFileChooser(WebView webView, ValueCallback<Uri[]> filePathCallback, FileChooserParams fileChooserParams) {
+                    // make sure there is no existing message
+                    if(Build.VERSION.SDK_INT >= 21) {
+                        valueCallbacks = filePathCallback;
+                        Intent intent = fileChooserParams.createIntent();
+                        intent.addCategory(Intent.CATEGORY_OPENABLE);
+                        intent.setType("*/*");
+                        try {
+                            Log.d("MLUVII","OPEN UPLOAD");
+                            activity.startActivityForResult(intent, REQUEST_SELECT_FILE);
+                        } catch (ActivityNotFoundException e) {
+                            Toast.makeText(activity, "Cannot open file chooser", Toast.LENGTH_LONG).show();
+                            return false;
+                        }
+                    }
+                    return true;
+                }
+
+                protected void openFileChooser(ValueCallback<Uri> filePathCallback)
+                {
+                    valueCallback = filePathCallback;
+                    Intent i = new Intent(Intent.ACTION_GET_CONTENT);
+                    i.addCategory(Intent.CATEGORY_OPENABLE);
+                    i.setType("*/*");
+                    activity.startActivityForResult(Intent.createChooser(i, "File Chooser"), REQUEST_SELECT_FILE);
+                }
+
+                public void openFileChooser(ValueCallback<Uri> uploadMsg, String acceptType) {
+                    valueCallback = uploadMsg;
+
+                    Intent i = new Intent(Intent.ACTION_GET_CONTENT);
+                    i.addCategory(Intent.CATEGORY_OPENABLE);
+                    i.setType("*/*");
+
+                    // Create file chooser intent
+                    Intent chooserIntent = Intent.createChooser(i, "Image Chooser");
+
+                    // On select image call onActivityResult method of activity
+                    activity.startActivityForResult(chooserIntent, REQUEST_SELECT_FILE);
+                }
+
+                public void openFileChooser(ValueCallback<Uri> uploadMsg,
+                                            String acceptType, String capture) {
+                    openFileChooser(uploadMsg, acceptType);
+                }
+
             });
 
-            mluviiVideoWebView.getSettings().setJavaScriptEnabled(true);
-            mluviiVideoWebView.getSettings().setDomStorageEnabled(true);
+            mluviiWebView.getSettings().setJavaScriptEnabled(true);
+            mluviiWebView.getSettings().setDomStorageEnabled(true);
+            mluviiWebView.getSettings().setAllowFileAccess(true);
+            mluviiWebView.getSettings().setAllowContentAccess(true);
+            mluviiWebView.setWebContentsDebuggingEnabled(true);
+
             mluviiVideoWebView.addJavascriptInterface(new InterfaceBetweenJavascriptAndLibrary(),"mluviiLibrary");
 
             mluviiVideoWebView.canGoBackOrForward(0);
