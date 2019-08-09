@@ -336,11 +336,15 @@ public class MluviiLibrary {
 
             });
 
-            mluviiWebView.getSettings().setJavaScriptEnabled(true);
-            mluviiWebView.getSettings().setDomStorageEnabled(true);
-            mluviiWebView.getSettings().setAllowFileAccess(true);
-            mluviiWebView.getSettings().setAllowContentAccess(true);
-            mluviiWebView.setWebContentsDebuggingEnabled(true);
+            WebSettings mWebSettings = mluviiWebView.getSettings();
+            mWebSettings.setCacheMode(WebSettings.LOAD_CACHE_ELSE_NETWORK);
+            mWebSettings.setJavaScriptEnabled(true);
+            mWebSettings.setDomStorageEnabled(true);
+            mWebSettings.setAllowFileAccess(true);
+            mWebSettings.setAllowContentAccess(true);
+            mWebSettings.setDatabaseEnabled(true);
+            mWebSettings.setAppCacheEnabled(true);
+            mWebSettings.setMediaPlaybackRequiresUserGesture(false);
             mluviiWebView.addJavascriptInterface(new InterfaceBetweenJavascriptAndLibrary(),"mluviiLibrary");
 
             mluviiWebView.canGoBackOrForward(0);
@@ -399,8 +403,6 @@ public class MluviiLibrary {
                                                        runChat();
                                                    }
                                                }
-
-
 
                                                @Override
                                                public void onReceivedSslError(WebView view, SslErrorHandler handler, SslError error) {
@@ -480,14 +482,17 @@ public class MluviiLibrary {
 
             });
 
-            mluviiWebView.getSettings().setJavaScriptEnabled(true);
-            mluviiWebView.getSettings().setDomStorageEnabled(true);
-            mluviiWebView.getSettings().setAllowFileAccess(true);
-            mluviiWebView.getSettings().setAllowContentAccess(true);
-            mluviiWebView.setWebContentsDebuggingEnabled(true);
-            mluviiWebView.addJavascriptInterface(new InterfaceBetweenJavascriptAndLibrary(),"mluviiLibrary");
             WebSettings mWebSettings = mluviiWebView.getSettings();
+            mWebSettings.setCacheMode(WebSettings.LOAD_CACHE_ELSE_NETWORK);
+            mWebSettings.setJavaScriptEnabled(true);
+            mWebSettings.setDomStorageEnabled(true);
             mWebSettings.setAllowFileAccess(true);
+            mWebSettings.setAllowContentAccess(true);
+            mWebSettings.setDatabaseEnabled(true);
+            mWebSettings.setAppCacheEnabled(true);
+            mWebSettings.setMediaPlaybackRequiresUserGesture(false);
+
+            mluviiWebView.addJavascriptInterface(new InterfaceBetweenJavascriptAndLibrary(),"mluviiLibrary");
 
             mluviiWebView.canGoBackOrForward(0);
             mluviiWebView.loadUrl(CHAT_URL);
@@ -614,11 +619,17 @@ public class MluviiLibrary {
 
             });
 
-            mluviiWebView.getSettings().setJavaScriptEnabled(true);
-            mluviiWebView.getSettings().setDomStorageEnabled(true);
-            mluviiWebView.getSettings().setAllowFileAccess(true);
-            mluviiWebView.getSettings().setAllowContentAccess(true);
-            mluviiWebView.setWebContentsDebuggingEnabled(true);
+            mluviiVideoWebView.setWebContentsDebuggingEnabled(true);
+
+            WebSettings mWebSettings = mluviiVideoWebView.getSettings();
+            mWebSettings.setCacheMode(WebSettings.LOAD_CACHE_ELSE_NETWORK);
+            mWebSettings.setJavaScriptEnabled(true);
+            mWebSettings.setDomStorageEnabled(true);
+            mWebSettings.setAllowFileAccess(true);
+            mWebSettings.setAllowContentAccess(true);
+            mWebSettings.setDatabaseEnabled(true);
+            mWebSettings.setAppCacheEnabled(true);
+            mWebSettings.setMediaPlaybackRequiresUserGesture(false);
 
             mluviiVideoWebView.addJavascriptInterface(new InterfaceBetweenJavascriptAndLibrary(),"mluviiLibrary");
 
