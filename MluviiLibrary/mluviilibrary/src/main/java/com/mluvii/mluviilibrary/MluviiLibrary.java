@@ -224,6 +224,17 @@ public class MluviiLibrary {
             }
         });
     }
+    
+    public static void addCustomData(String name, String value){
+        String customDataString = "$owidget.addCustomData("+name+","+value+")";
+        if(Build.VERSION.SDK_INT  >= 19) {
+            Log.d("MLUVII_SDK","Cool evaluate");
+            mluviiWebView.evaluateJavascript(customDataString, null);
+        } else {
+            Log.d("MLUVII_SDK","Low evaluate");
+            mluviiWebView.loadUrl("javascript: "+customDataString);
+        }
+    }
 
     /**
      * Function that returns webview optimized for mluvii widget
