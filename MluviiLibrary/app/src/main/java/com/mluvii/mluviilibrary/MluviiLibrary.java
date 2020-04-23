@@ -237,11 +237,6 @@ public class MluviiLibrary {
                                                }
 
                                                @Override
-                                               public void onReceivedSslError(WebView view, SslErrorHandler handler, SslError error) {
-                                                   handler.proceed(); // Ignore SSL certificate errors
-                                               }
-
-                                               @Override
                                                public void onPageFinished(WebView view, String url) {
                                                    if(Build.VERSION.SDK_INT  >= 19) {
                                                        mluviiWebView.evaluateJavascript(injectedString, null);
@@ -257,16 +252,11 @@ public class MluviiLibrary {
              */
             mluviiWebView.setWebChromeClient(new WebChromeClient(){
 
-                /*@Override
+                @Override
                 public void onPermissionRequest(final PermissionRequest request) {
                     request.grant(request.getResources());
-                }*/
+                }
 
-                /*@Override
-                public boolean onConsoleMessage(ConsoleMessage consoleMessage) {
-                    Log.d("MluviiLib", "CNSL_MSG: "+consoleMessage.message());
-                    return true;
-                }*/
             });
 
             mluviiWebView.getSettings().setJavaScriptEnabled(true);
