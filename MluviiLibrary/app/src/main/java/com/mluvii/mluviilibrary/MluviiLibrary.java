@@ -144,7 +144,7 @@ public class MluviiLibrary {
         }
     }
 
-    private static String createUrlString(String url, String companyId, String tenantId, String presetName, String language){
+    private static String createUrlString(String url, String companyId, String tenantId, String presetName, String language, String scope){
         StringBuilder builder = new StringBuilder();
         builder.append("https://");
         builder.append(url);
@@ -173,6 +173,14 @@ public class MluviiLibrary {
                 builder.append(URLEncoder.encode(presetName,"utf-8"));
             } catch (UnsupportedEncodingException e) {
                 builder.append(presetName);
+            }
+        }
+        if(scope != null){
+            builder.append("&s=");
+            try {
+                builder.append(URLEncoder.encode(scope, "utf-8"));
+            } catch (UnsupportedEncodingException e) {
+                builder.append(scope);
             }
         }
         return builder.toString();
@@ -208,9 +216,9 @@ public class MluviiLibrary {
      * @param url url to load in webview
      * @return WebView with loaded page with URL from param
      */
-    public static WebView getMluviiWebView(final Activity activity, String url, String companyId, String tenantId, String presetName, String language){
+    public static WebView getMluviiWebView(final Activity activity, String url, String companyId, String tenantId, String presetName, String language, String scope){
         if(mluviiWebView == null) {
-            CHAT_URL = createUrlString(url,companyId,tenantId,presetName,language);
+            CHAT_URL = createUrlString(url,companyId,tenantId,presetName,language,scope);
             Log.d("MLUVII_URL", CHAT_URL);
             mluviiWebView = new WebView(activity);
             /**

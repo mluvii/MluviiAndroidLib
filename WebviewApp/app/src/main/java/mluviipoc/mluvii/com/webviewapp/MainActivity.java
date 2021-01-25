@@ -30,6 +30,7 @@ public class MainActivity extends AppCompatActivity {
     private static String mluviiTenantId = null;
     private static String mluviiPresetName = "DebitoTestSDK";
     private static String mluviiLanguageCode = null;
+    private static String mluviiScope = null;
 
     /**
      * Current stat of the operators group
@@ -145,7 +146,7 @@ public class MainActivity extends AppCompatActivity {
         /**
          * Inicializace WebView z MluviiLibrary
          */
-        mluviiWebView = MluviiLibrary.getMluviiWebView(this, mluviiServer,mluviiCompanyId, mluviiTenantId, mluviiPresetName, mluviiLanguageCode);
+        mluviiWebView = MluviiLibrary.getMluviiWebView(this, mluviiServer,mluviiCompanyId, mluviiTenantId, mluviiPresetName, mluviiLanguageCode, mluviiScope);
         /**
          * Nastaveni velikosti 0,0 na webview, aby nebylo videt, dokud neni potreba
          */
