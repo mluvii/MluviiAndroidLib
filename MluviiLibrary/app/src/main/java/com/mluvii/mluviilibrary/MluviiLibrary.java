@@ -87,7 +87,7 @@ public class MluviiLibrary {
     private static Callable<Void> closeChatFunc = null;
     private static Callable<Void> chatLoaded = null;
 
-    private static String injectedString = "var _close = window.close; window.close = function (){ if(window['mluviiLibrary']){ window['mluviiLibrary'].closeChat(); } _close();}";
+    private static String injectedString = " if(_close == null) {var _close = window.close; window.close = function (){ if(window['mluviiLibrary']){ console.log('ENDED'); window['mluviiLibrary'].closeChat(); } _close();}}";
 
     /**
      * Nastaveni funkce, ktera se vola po nacteni strankz s chatem / Stanka otevrena po zavolani funkce runCHAT
