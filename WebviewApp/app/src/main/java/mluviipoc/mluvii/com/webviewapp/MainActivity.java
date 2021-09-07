@@ -25,10 +25,10 @@ public class MainActivity extends AppCompatActivity {
     /**
      * Inicializacni parametry pro Mluvii library webView
      */
-    private static String mluviiServer = "app.mluvii.com";
+    private static String mluviiServer = "apptest.mluvii.com";
     private static String mluviiCompanyId = "295b1064-cf5b-4a5d-9e05-e7a74f86ae5e";
     private static String mluviiTenantId = null;
-    private static String mluviiPresetName = "DebitoTestSDK";
+    private static String mluviiPresetName = "MluviiSdkA";
     private static String mluviiLanguageCode = null;
     private static String mluviiScope = null;
 
@@ -146,7 +146,7 @@ public class MainActivity extends AppCompatActivity {
         /**
          * Inicializace WebView z MluviiLibrary
          */
-        mluviiWebView = MluviiLibrary.getMluviiWebView(this, mluviiServer,mluviiCompanyId, mluviiTenantId, mluviiPresetName, mluviiLanguageCode, mluviiScope);
+        mluviiWebView = MluviiLibrary.getMluviiWebView(this, mluviiServer,mluviiCompanyId, mluviiTenantId, mluviiPresetName, mluviiLanguageCode);
         /**
          * Nastaveni velikosti 0,0 na webview, aby nebylo videt, dokud neni potreba
          */
@@ -162,7 +162,6 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 if(status == 1){
-					MluviiLibrary.addCustomData("additionalParam","testValue");
                     MluviiLibrary.runChat();
                     RelativeLayout.LayoutParams openedMluviiParams = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
                     mluviiWebView.setLayoutParams(openedMluviiParams);
