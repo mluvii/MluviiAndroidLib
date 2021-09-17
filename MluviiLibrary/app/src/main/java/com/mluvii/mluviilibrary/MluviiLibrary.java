@@ -89,6 +89,10 @@ public class MluviiLibrary {
 
     private static String injectedString = " if(_close == null) {var _close = window.close; window.close = function (){ if(window['mluviiLibrary']){ console.log('ENDED'); window['mluviiLibrary'].closeChat(); } _close();}}";
 
+    public static String getItFromApp() {
+        return "ww";
+    }
+
     /**
      * Nastaveni funkce, ktera se vola po nacteni strankz s chatem / Stanka otevrena po zavolani funkce runCHAT
      * @param function Function to call when chat page is loaded

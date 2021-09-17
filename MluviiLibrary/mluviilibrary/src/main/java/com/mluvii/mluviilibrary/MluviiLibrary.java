@@ -97,7 +97,11 @@ public class MluviiLibrary {
 
     private static final String MLUVII_LIBRARY_LOG = "MLUVII_LIBRARY";
 
-    private static String injectedString = "var _close = window.close; window.close = function (){ if(window['mluviiLibrary']){ window['mluviiLibrary'].closeChat(); } _close();}";
+    private static String injectedString = " if(_close == null) {var _close = window.close; window.close = function (){ if(window['mluviiLibrary']){ console.log('ENDED'); window['mluviiLibrary'].closeChat(); } _close();}}";
+
+    public static String getItFromMluviiLib() {
+        return "ww";
+    }
 
     /**
      * Nastaveni funkce, ktera se vola po nacteni strankz s chatem / Stanka otevrena po zavolani funkce runCHAT
@@ -155,7 +159,7 @@ public class MluviiLibrary {
     public static void setSelectFileNumber(int number) { REQUEST_SELECT_FILE = number; }
 
     /**
-     * Spusteni chatu na zatim skyte webview
+     * Spusteni chatu na zatim skryte webview
      */
     public static void runChat(){
         if(Build.VERSION.SDK_INT  >= 19) {
@@ -177,7 +181,7 @@ public class MluviiLibrary {
         }
     }
 
-    private static String createUrlString(String url, String companyId, String tenantId, String presetName, String language){
+    private static String createUrlString(String url, String companyId, String tenantId, String presetName, String language, String scope){
         StringBuilder builder = new StringBuilder();
         builder.append("https://");
         builder.append(url);
@@ -208,6 +212,14 @@ public class MluviiLibrary {
                 builder.append(presetName);
             }
         }
+        if(scope != null){
+            builder.append("&s=");
+            try {
+                builder.append(URLEncoder.encode(scope, "utf-8"));
+            } catch (UnsupportedEncodingException e) {
+                builder.append(scope);
+            }
+        }
         return builder.toString();
     }
 
@@ -226,7 +238,7 @@ public class MluviiLibrary {
     }
     
     public static void addCustomData(String name, String value){
-        String customDataString = "$owidget.addCustomData("+name+","+value+")";
+        String customDataString = "$owidget.addCustomData('"+name+"', '"+value+"')";
         if(Build.VERSION.SDK_INT  >= 19) {
             Log.d("MLUVII_SDK","Cool evaluate");
             mluviiWebView.evaluateJavascript(customDataString, null);
@@ -242,10 +254,10 @@ public class MluviiLibrary {
      * @param url url to load in webview
      * @return WebView with loaded page with URL from param
      */
-    public static WebView getMluviiWebView(final Activity activity, String url, String companyId, String tenantId, String presetName, String language){
+    public static WebView getMluviiWebView(final Activity activity, String url, String companyId, String tenantId, String presetName, String language, String scope){
         if(mluviiWebView == null) {
 
-            CHAT_URL = createUrlString(url,companyId,tenantId,presetName,language);
+            CHAT_URL = createUrlString(url,companyId,tenantId,presetName,language, scope);
             Log.d("MLUVII_URL", CHAT_URL);
             mluviiWebView = new WebView(activity);
             /**
@@ -370,9 +382,9 @@ public class MluviiLibrary {
      * @param url url to load in webview
      * @return WebView with loaded page with URL from param
      */
-    public static WebView getAndRunMluviiWebView(final Activity activity, String url, String companyId, String tenantId, String presetName, String language){
+    public static WebView getAndRunMluviiWebView(final Activity activity, String url, String companyId, String tenantId, String presetName, String language, String scope){
         if(mluviiWebView == null) {
-            CHAT_URL = createUrlString(url,companyId,tenantId,presetName,language);
+            CHAT_URL = createUrlString(url,companyId,tenantId,presetName,language, scope);
             Log.d("MLUVII_URL", CHAT_URL);
             mluviiWebView = new WebView(activity);
             /**
@@ -517,9 +529,9 @@ public class MluviiLibrary {
      * @param url url to load in webview
      * @return WebView with loaded page with URL from param
      */
-    public static WebView getMluviiVideoWebView(final Activity activity, String url, String companyId, String tenantId, String presetName, String language){
+    public static WebView getMluviiVideoWebView(final Activity activity, String url, String companyId, String tenantId, String presetName, String language, String scope){
         if(mluviiVideoWebView == null) {
-            CHAT_URL = createUrlString(url,companyId,tenantId,presetName,language);
+            CHAT_URL = createUrlString(url,companyId,tenantId,presetName,language, scope);
             Log.d("MLUVII_URL", CHAT_URL);
             mluviiVideoWebView = new WebView(activity);
             /**

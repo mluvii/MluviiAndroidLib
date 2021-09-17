@@ -25,12 +25,13 @@ public class MainActivity extends AppCompatActivity {
     /**
      * Inicializacni parametry pro Mluvii library webView
      */
-    private static String mluviiServer = "apptest.mluvii.com";
+    private static String mluviiServer = "app.mluvii.com";
     private static String mluviiCompanyId = "295b1064-cf5b-4a5d-9e05-e7a74f86ae5e";
     private static String mluviiTenantId = null;
-    private static String mluviiPresetName = "MluviiSdkA";
+    private static String mluviiPresetName = "MPSDK";
     private static String mluviiLanguageCode = null;
     private static String mluviiScope = null;
+    private static Integer counter = 1;
 
     /**
      * Current stat of the operators group
@@ -117,7 +118,6 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-
         /**
          * Callback na Zavreni chatu - nutno reload puvodni URL neb chat widget to presmeruje
          */
@@ -142,11 +142,18 @@ public class MainActivity extends AppCompatActivity {
          */
 
 
-
         /**
          * Inicializace WebView z MluviiLibrary
          */
-        mluviiWebView = MluviiLibrary.getMluviiWebView(this, mluviiServer,mluviiCompanyId, mluviiTenantId, mluviiPresetName, mluviiLanguageCode);
+
+        counter++;
+        /*if (counter % 2 == 0){
+            mluviiPresetName = "MPSDK";
+        } else {
+            mluviiPresetName = "MPSDKQ";
+        }*/
+
+        mluviiWebView = MluviiLibrary.getMluviiWebView(this, mluviiServer,mluviiCompanyId, mluviiTenantId, mluviiPresetName, mluviiLanguageCode, mluviiScope);
         /**
          * Nastaveni velikosti 0,0 na webview, aby nebylo videt, dokud neni potreba
          */
@@ -161,25 +168,23 @@ public class MainActivity extends AppCompatActivity {
         btn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if(status == 1){
+                //if(status == 1){
+                    MluviiLibrary.addCustomData("puvod", "ahoooj " + counter);
+                MluviiLibrary.addCustomData("uvod", "ahoooj " + counter);
+                MluviiLibrary.addCustomData("test", "ahoooj " + counter);
                     MluviiLibrary.runChat();
+
                     RelativeLayout.LayoutParams openedMluviiParams = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
                     mluviiWebView.setLayoutParams(openedMluviiParams);
-                }
+                //}
             }
         });
 
-        /**
-         * Linear layout s Tlacitkem
-         */
         LinearLayout linearLayout = new LinearLayout(this);
         LinearLayout.LayoutParams params1 = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,ViewGroup.LayoutParams.MATCH_PARENT);
         linearLayout.setLayoutParams(params1);
         linearLayout.addView(btn);
 
-        /**
-         * Nastaveni zakladniho layoutu
-         */
         final RelativeLayout layout = new RelativeLayout(this);
         final RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
         layout.addView(linearLayout);
