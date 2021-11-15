@@ -81,6 +81,7 @@ public class MluviiLibrary {
     }
 
     private static WebView mluviiWebView = null;
+    private static IGuestTokenStorage guestTokenStorage = null;
     private static Callable<Void> onlineFunc = null;
     private static Callable<Void> offlineFunc = null;
     private static Callable<Void> busyFunc = null;
@@ -207,6 +208,11 @@ public class MluviiLibrary {
             Log.d("MLUVII_SDK","Low evaluate");
             mluviiWebView.loadUrl("javascript: "+customDataString);
         }
+    }
+
+    public static void setGuestTokenStorage(IGuestTokenStorage guestTokenStorage){
+        MluviiLibrary.guestTokenStorage = guestTokenStorage;
+        // TODO: use the storage instead of relying on cookies
     }
 
 
