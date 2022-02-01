@@ -79,6 +79,15 @@ public class MluviiLibrary {
             }
         }
     }
+	
+	public static class UrlCallback implements Callable<Void>{
+        public String url;
+
+        @Override
+        public Void call() throws Exception {
+            return null;
+        }
+    }
 
     private static WebView mluviiWebView = null;
     private static Callable<Void> onlineFunc = null;
@@ -86,6 +95,7 @@ public class MluviiLibrary {
     private static Callable<Void> busyFunc = null;
     private static Callable<Void> closeChatFunc = null;
     private static Callable<Void> chatLoaded = null;
+	private static UrlCallback urlCallback = null;
 
     private static String injectedString = " if(_close == null) {var _close = window.close; window.close = function (){ if(window['mluviiLibrary']){ console.log('ENDED'); window['mluviiLibrary'].closeChat(); } _close();}}";
 
@@ -120,6 +130,15 @@ public class MluviiLibrary {
     public static void setStatusBusyCallback(Callable<Void> function){
         busyFunc = function;
     }
+
+	/**
+     * Nastaveni funkce, ktera se vola pri pokusu o otevreni odkazu
+     * @param function Function to call
+     */
+    public static void setUrlCallbackFunc(UrlCallback function){
+        urlCallback = function;
+    }
+
 
     /**
      * Nastaveni funkce, ktera se vola pri zavreni chatu
@@ -234,6 +253,15 @@ public class MluviiLibrary {
                                                    if(url.contains("GuestFrame?") || url.contains(CHAT_URL) ) {
                                                        view.loadUrl(url);
                                                        return false;
+													} else if (urlCallback != null) {
+                                                       urlCallback.url = url;
+                                                       try {
+                                                           //asdasdad
+                                                           urlCallback.call();
+                                                       } catch (Exception e) {
+                                                           e.printStackTrace();
+                                                       }
+                                                    return true;
                                                    } else {
                                                        /**
                                                         * Otevre jine URL (obrazek, file ...)
