@@ -112,7 +112,7 @@ public class MluviiLibrary {
     private static String injectedString = "var _close = window.close; window.close = function (){ if(window['mluviiLibrary']){ window['mluviiLibrary'].closeChat(); } _close();}";
 
     /**
-     * Nastaveni funkce, ktera se vola po nacteni strankz s chatem / Stanka otevrena po zavolani funkce runCHAT
+     * Nastaveni funkce, ktera se vola po nacteni stranky s chatem / Stanka otevrena po zavolani funkce runCHAT
      * @param function Function to call when chat page is loaded
      */
     public static void setChatLoadedCallback(Callable<Void> function){
@@ -263,15 +263,30 @@ public class MluviiLibrary {
         String customDataString = "$owidget.addCustomData(\""+name+"\",\""+value+"\")";
         if(Build.VERSION.SDK_INT  >= 19) {
             Log.d("MLUVII_SDK","Cool evaluate" + customDataString);
-            mluviiWebView.evaluateJavascript(customDataString, new ValueCallback<String>() {
-                @Override
-                public void onReceiveValue(String s) {
-                    returnDataFromJs(s);
-                }
-            });
+            if(mluviiWebView != null) {
+                mluviiWebView.evaluateJavascript(customDataString, new ValueCallback<String>() {
+                    @Override
+                    public void onReceiveValue(String s) {
+                        returnDataFromJs(s);
+                    }
+                });
+            }
+            if(mluviiVideoWebView != null) {
+                mluviiVideoWebView.evaluateJavascript(customDataString, new ValueCallback<String>() {
+                    @Override
+                    public void onReceiveValue(String s) {
+                        returnDataFromJs(s);
+                    }
+                });
+            }
         } else {
             Log.d("MLUVII_SDK","Low evaluate");
-            mluviiWebView.loadUrl("javascript: "+customDataString);
+            if(mluviiWebView != null) {
+                mluviiWebView.loadUrl("javascript: " + customDataString);
+            }
+            if(mluviiVideoWebView != null) {
+                mluviiVideoWebView.loadUrl("javascript: " + customDataString);
+            }
         }
     }
 

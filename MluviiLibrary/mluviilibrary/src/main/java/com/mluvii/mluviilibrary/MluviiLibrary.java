@@ -82,6 +82,15 @@ public class MluviiLibrary {
         }
     }
 
+    public static class UrlCallback implements Callable<Void>{
+        public String url;
+
+        @Override
+        public Void call() throws Exception {
+            return null;
+        }
+    }
+
     private static WebView mluviiWebView = null;
     private static WebView mluviiVideoWebView = null;
     private static Callable<Void> onlineFunc = null;
@@ -89,7 +98,9 @@ public class MluviiLibrary {
     private static Callable<Void> busyFunc = null;
     private static Callable<Void> closeChatFunc = null;
     private static Callable<Void> chatLoaded = null;
+    private static Callable<Void> paramSet = null;
     private static int REQUEST_SELECT_FILE = 65456;
+    private static UrlCallback urlCallback = null;
     private static Uri mCapturedImageURI = null;
 
     private static ValueCallback<Uri[]>  valueCallbacks = null;
@@ -153,6 +164,13 @@ public class MluviiLibrary {
      *  Nastaveni cisla, kterym se pozna pozadavek na sdileni souboru jdouci z mluvii library
      */
     public static void setSelectFileNumber(int number) { REQUEST_SELECT_FILE = number; }
+
+    /**
+     *  Nastaveni funkce, ktera se vola po nastaveni parametru
+     */
+    public static void setParamSetFunc(UrlCallback function){
+        paramSet = function;
+    }
 
     /**
      * Spusteni chatu na zatim skyte webview
@@ -224,15 +242,45 @@ public class MluviiLibrary {
             }
         });
     }
-    
+
+    public static void returnDataFromJs(String data) {
+        if (paramSet != null) {
+            try {
+                paramSet.call();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
     public static void addCustomData(String name, String value){
-        String customDataString = "$owidget.addCustomData("+name+","+value+")";
+        String customDataString = "$owidget.addCustomData(\""+name+"\",\""+value+"\")";
         if(Build.VERSION.SDK_INT  >= 19) {
-            Log.d("MLUVII_SDK","Cool evaluate");
-            mluviiWebView.evaluateJavascript(customDataString, null);
+            Log.d("MLUVII_SDK","Cool evaluate" + customDataString);
+            if(mluviiWebView != null) {
+                mluviiWebView.evaluateJavascript(customDataString, new ValueCallback<String>() {
+                    @Override
+                    public void onReceiveValue(String s) {
+                        returnDataFromJs(s);
+                    }
+                });
+            }
+            if(mluviiVideoWebView != null) {
+                mluviiVideoWebView.evaluateJavascript(customDataString, new ValueCallback<String>() {
+                    @Override
+                    public void onReceiveValue(String s) {
+                        returnDataFromJs(s);
+                    }
+                });
+            }
         } else {
             Log.d("MLUVII_SDK","Low evaluate");
-            mluviiWebView.loadUrl("javascript: "+customDataString);
+            if(mluviiWebView != null) {
+                mluviiWebView.loadUrl("javascript: " + customDataString);
+            }
+            if(mluviiVideoWebView != null) {
+                mluviiVideoWebView.loadUrl("javascript: " + customDataString);
+            }
         }
     }
 
@@ -261,6 +309,14 @@ public class MluviiLibrary {
                                                    if(url.contains("GuestFrame?") || url.contains(CHAT_URL) || url.contains("widget") ) {
                                                        view.loadUrl(url);
                                                        return false;
+                                                   } else if (urlCallback != null) {
+                                                       urlCallback.url = url;
+                                                       try {
+                                                           urlCallback.call();
+                                                       } catch (Exception e) {
+                                                           e.printStackTrace();
+                                                       }
+                                                       return true;
                                                    } else {
                                                        /**
                                                         * Otevre jine URL (obrazek, file ...)
@@ -394,6 +450,14 @@ public class MluviiLibrary {
                                                    if(url.contains("GuestFrame?") || url.contains(CHAT_URL) || url.contains("widget") ) {
                                                        view.loadUrl(url);
                                                        return false;
+                                                   } else if (urlCallback != null) {
+                                                       urlCallback.url = url;
+                                                       try {
+                                                           urlCallback.call();
+                                                       } catch (Exception e) {
+                                                           e.printStackTrace();
+                                                       }
+                                                       return true;
                                                    } else {
                                                        /**
                                                         * Otevre jine URL (obrazek, file ...)
@@ -535,6 +599,14 @@ public class MluviiLibrary {
                                                         if(url.contains("GuestFrame?") || url.contains(CHAT_URL) || url.contains("widget") ) {
                                                             view.loadUrl(url);
                                                             return false;
+                                                        } else if (urlCallback != null) {
+                                                            urlCallback.url = url;
+                                                            try {
+                                                                urlCallback.call();
+                                                            } catch (Exception e) {
+                                                                e.printStackTrace();
+                                                            }
+                                                            return true;
                                                         } else {
                                                             /**
                                                              * Otevre jine URL (obrazek, file ...)
