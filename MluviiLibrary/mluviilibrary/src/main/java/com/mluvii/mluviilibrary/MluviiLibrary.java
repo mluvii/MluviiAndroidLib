@@ -237,7 +237,12 @@ public class MluviiLibrary {
             @Override
             public void run(){
                 Log.d("MLUVII_URL_RESET", "RESETTED_TO: "+CHAT_URL);
-                mluviiWebView.loadUrl(CHAT_URL);
+                if(mluviiWebView != null) {
+                    mluviiWebView.loadUrl(CHAT_URL);
+                }
+                if(mluviiVideoWebView != null){
+                    mluviiVideoWebView.loadUrl(CHAT_URL);
+                }
 
             }
         });
