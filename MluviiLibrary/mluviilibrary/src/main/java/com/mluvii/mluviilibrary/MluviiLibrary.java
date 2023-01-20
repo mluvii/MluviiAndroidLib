@@ -1,4 +1,4 @@
-package com.mluvii.mluviilibrary;
+package mluviipoc.mluvii.com.webviewapp;
 
 import android.app.Activity;
 import android.content.ActivityNotFoundException;
@@ -8,6 +8,7 @@ import android.os.Build;
 import android.os.Looper;
 import android.util.Log;
 import android.webkit.ConsoleMessage;
+import android.webkit.CookieSyncManager;
 import android.webkit.JavascriptInterface;
 import android.webkit.PermissionRequest;
 import android.webkit.SslErrorHandler;
@@ -80,6 +81,33 @@ public class MluviiLibrary {
                 }
             }
         }
+
+        /**
+         * Volani zavreni chatu z webview
+         */
+        @JavascriptInterface
+        public void mluviiEvent(String event, long sessionId){
+            Log.d("MLUVII_JAVASCRIPT","Close called");
+            if(mluviiEventCallback != null){
+                mluviiEventCallback.Event = event;
+                mluviiEventCallback.SessionId =sessionId;
+                try {
+                    mluviiEventCallback.call();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
+    public static class MluviiEventCallback implements Callable<Void>{
+        public String Event;
+        public long SessionId;
+
+        @Override
+        public Void call() throws Exception {
+            return null;
+        }
     }
 
     public static class UrlCallback implements Callable<Void>{
@@ -99,8 +127,9 @@ public class MluviiLibrary {
     private static Callable<Void> closeChatFunc = null;
     private static Callable<Void> chatLoaded = null;
     private static Callable<Void> paramSet = null;
-    private static int REQUEST_SELECT_FILE = 65456;
     private static UrlCallback urlCallback = null;
+    private static MluviiEventCallback mluviiEventCallback = null;
+    private static int REQUEST_SELECT_FILE = 65456;
     private static Uri mCapturedImageURI = null;
 
     private static ValueCallback<Uri[]>  valueCallbacks = null;
@@ -108,10 +137,10 @@ public class MluviiLibrary {
 
     private static final String MLUVII_LIBRARY_LOG = "MLUVII_LIBRARY";
 
-    private static String injectedString = "var _close = window.close; window.close = function (){ if(window['mluviiLibrary']){ window['mluviiLibrary'].closeChat(); } _close();}";
+    private static String injectedString = "var _close = window.close; window.close = function (){ if(window['mluviiLibrary']){ window['mluviiLibrary'].closeChat(); } _close();}; var mluviiEventHandler = function(event,sessionId){if(window['mluviiLibrary']){ window['mluviiLibrary'].mluviiEvent(event,sessionId); }}; window.mluviiEventHandler = mluviiEventHandler;";
 
     /**
-     * Nastaveni funkce, ktera se vola po nacteni strankz s chatem / Stanka otevrena po zavolani funkce runCHAT
+     * Nastaveni funkce, ktera se vola po nacteni stranky s chatem / Stanka otevrena po zavolani funkce runCHAT
      * @param function Function to call when chat page is loaded
      */
     public static void setChatLoadedCallback(Callable<Void> function){
@@ -151,6 +180,28 @@ public class MluviiLibrary {
     }
 
     /**
+     * Nastaveni funkce, ktera se vola pri pokusu o otevreni odkazu
+     * @param function Function to call
+     */
+    public static void setUrlCallbackFunc(UrlCallback function){
+        urlCallback = function;
+    }
+
+    /**
+     * Nastaveni funkce, ktera se vola po nastaveni call parametru
+     * @param function Function to call
+     */
+    public static void setParamSetFunc(UrlCallback function){
+        paramSet = function;
+    }
+
+    /**
+     * Nastaveni funkce, ktera se vola pri eventu o prubehu sezeni( sessionStarted, sessionEnded)
+     * @param function Function to call
+     */
+    public static void setMluviiEventCallbackFunc(MluviiEventCallback function){ mluviiEventCallback = function;}
+
+    /**
      * Tato funkce vraci value callbacks potrebne pro nahravani souboru
      */
     public static ValueCallback<Uri[]> getFilePathCallbacks() { return valueCallbacks; }
@@ -164,13 +215,6 @@ public class MluviiLibrary {
      *  Nastaveni cisla, kterym se pozna pozadavek na sdileni souboru jdouci z mluvii library
      */
     public static void setSelectFileNumber(int number) { REQUEST_SELECT_FILE = number; }
-
-    /**
-     *  Nastaveni funkce, ktera se vola po nastaveni parametru
-     */
-    public static void setParamSetFunc(UrlCallback function){
-        paramSet = function;
-    }
 
     /**
      * Spusteni chatu na zatim skyte webview
@@ -339,6 +383,7 @@ public class MluviiLibrary {
                                                    } else{
                                                        mluviiWebView.loadUrl("javascript: "+injectedString);
                                                    }
+                                                   CookieSyncManager.getInstance().sync();
                                                }
 
                                            }
@@ -354,6 +399,8 @@ public class MluviiLibrary {
                         Log.d("MLUVII","Permission request granted");
                         request.grant(request.getResources());
                         //request.grant(new String[]{PermissionRequest.RESOURCE_VIDEO_CAPTURE});
+                    } else {
+                        Log.d("MLUVII","Permission request but low sdk");
                     }
                 }
 
