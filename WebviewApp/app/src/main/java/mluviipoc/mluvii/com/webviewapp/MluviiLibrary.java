@@ -81,6 +81,33 @@ public class MluviiLibrary {
                 }
             }
         }
+
+        /**
+         * Volani zavreni chatu z webview
+         */
+        @JavascriptInterface
+        public void mluviiEvent(String event, long sessionId){
+            Log.d("MLUVII_JAVASCRIPT","Close called");
+            if(mluviiEventCallback != null){
+                mluviiEventCallback.Event = event;
+                mluviiEventCallback.SessionId =sessionId;
+                try {
+                    mluviiEventCallback.call();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
+    public static class MluviiEventCallback implements Callable<Void>{
+        public String Event;
+        public long SessionId;
+
+        @Override
+        public Void call() throws Exception {
+            return null;
+        }
     }
 
     public static class UrlCallback implements Callable<Void>{
@@ -101,6 +128,7 @@ public class MluviiLibrary {
     private static Callable<Void> chatLoaded = null;
     private static Callable<Void> paramSet = null;
     private static UrlCallback urlCallback = null;
+    private static MluviiEventCallback mluviiEventCallback = null;
     private static int REQUEST_SELECT_FILE = 65456;
     private static Uri mCapturedImageURI = null;
 
@@ -109,7 +137,7 @@ public class MluviiLibrary {
 
     private static final String MLUVII_LIBRARY_LOG = "MLUVII_LIBRARY";
 
-    private static String injectedString = "var _close = window.close; window.close = function (){ if(window['mluviiLibrary']){ window['mluviiLibrary'].closeChat(); } _close();}";
+    private static String injectedString = "var _close = window.close; window.close = function (){ if(window['mluviiLibrary']){ window['mluviiLibrary'].closeChat(); } _close();}; var mluviiEventHandler = function(event,sessionId){if(window['mluviiLibrary']){ window['mluviiLibrary'].mluviiEvent(event,sessionId); }}; window.mluviiEventHandler = mluviiEventHandler;";
 
     /**
      * Nastaveni funkce, ktera se vola po nacteni stranky s chatem / Stanka otevrena po zavolani funkce runCHAT
@@ -163,6 +191,8 @@ public class MluviiLibrary {
         paramSet = function;
     }
 
+    public static void setMluviiEventCallbackFunc(MluviiEventCallback function){ mluviiEventCallback = function;}
+
     /**
      * Tato funkce vraci value callbacks potrebne pro nahravani souboru
      */
@@ -194,10 +224,10 @@ public class MluviiLibrary {
     public static void runVideo(){
         if(Build.VERSION.SDK_INT  >= 19) {
             Log.d("MLUVII_SDK","Cool evaluate");
-            mluviiVideoWebView.evaluateJavascript("$owidget.openAppOnCurrentPage('av');", null);
+            mluviiVideoWebView.evaluateJavascript("$owidget.openAppForSDK('av');", null);
         } else {
             Log.d("MLUVII_SDK","Low evaluate");
-            mluviiVideoWebView.loadUrl("javascript: $owidget.openAppOnCurrentPage('av');");
+            mluviiVideoWebView.loadUrl("javascript: $owidget.openAppForSDK('av');");
         }
     }
 
@@ -243,7 +273,12 @@ public class MluviiLibrary {
             @Override
             public void run(){
                 Log.d("MLUVII_URL_RESET", "RESETTED_TO: "+CHAT_URL);
-                mluviiWebView.loadUrl(CHAT_URL);
+                if(mluviiWebView != null) {
+                    mluviiWebView.loadUrl(CHAT_URL);
+                }
+                if(mluviiVideoWebView != null){
+                    mluviiVideoWebView.loadUrl(CHAT_URL);
+                }
 
             }
         });
