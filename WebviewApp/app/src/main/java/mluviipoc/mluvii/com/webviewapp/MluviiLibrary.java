@@ -380,12 +380,6 @@ public class MluviiLibrary {
                                                    }
                                                    CookieSyncManager.getInstance().sync();
                                                }
-
-                @Override
-                public void onReceivedSslError(WebView view, SslErrorHandler handler, SslError error) {
-                    handler.proceed(); // Ignore SSL certificate errors
-                }
-
                                            }
             );
             /**
@@ -522,11 +516,6 @@ public class MluviiLibrary {
                                                        runChat();
                                                    }
                                                }
-
-                                               @Override
-                                               public void onReceivedSslError(WebView view, SslErrorHandler handler, SslError error) {
-                                                   handler.proceed(); // Ignore SSL certificate errors
-                                               }
                                            }
             );
 
@@ -661,12 +650,6 @@ public class MluviiLibrary {
                                                             mluviiVideoWebView.loadUrl("javascript: "+injectedString);
                                                         }
                                                     }
-
-                                                    @Override
-                                                    public void onReceivedSslError(WebView view, SslErrorHandler handler, SslError error) {
-                                                        handler.proceed(); // Ignore SSL certificate errors
-                                                    }
-
                                                 }
             );
             /**
