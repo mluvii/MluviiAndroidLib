@@ -61,18 +61,21 @@ Examples
 
 javaCopy code
 
-`WebView mluviiWebView = MluviiLibrary.getMluviiWebView(activity, url, companyId, tenantId, presetName, language, scope);`
+```
+WebView mluviiWebView = MluviiLibrary.getMluviiWebView(activity, url, companyId, tenantId, presetName, language, scope);
+```
 
 ### Setting a Callback for Online Status:
 
 javaCopy code
-
-`MluviiLibrary.setStatusOnlineCallback(new Callable<Void>() {
+```
+MluviiLibrary.setStatusOnlineCallback(new Callable<Void>() {
     public Void call() {
         // Handle online status
         return null;
     }
-});`
+});
+```
 
 Permissions
 -----------
@@ -82,7 +85,7 @@ Make sure you grant the necessary permissions for camera, microphone, etc., in y
 Support and Contributions
 -------------------------
 
-For any issues, questions, or contributions, please refer to the official documentation or contact the support team.
+For any issues, questions, or contributions, please refer to the [official documentation](https://docs.mluvii.com/) or contact the [support team](mail:support@mluvii.com).
 
 License
 -------
