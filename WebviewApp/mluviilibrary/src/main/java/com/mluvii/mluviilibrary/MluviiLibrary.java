@@ -5,10 +5,7 @@ import android.content.ActivityNotFoundException;
 import android.net.Uri;
 import android.net.http.SslError;
 import android.os.Build;
-import android.os.Environment;
 import android.os.Looper;
-import android.provider.MediaStore;
-import androidx.core.content.FileProvider;
 import android.util.Log;
 import android.webkit.ConsoleMessage;
 import android.webkit.CookieSyncManager;
@@ -21,13 +18,8 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.content.Intent;
-
-import java.io.File;
-import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.concurrent.Callable;
 import android.os.Handler;
 import android.widget.Toast;
@@ -137,12 +129,11 @@ public class MluviiLibrary {
     private static Callable<Void> paramSet = null;
     private static UrlCallback urlCallback = null;
     private static MluviiEventCallback mluviiEventCallback = null;
-    public static int REQUEST_SELECT_FILE = 65456;
+    private static int REQUEST_SELECT_FILE = 65456;
     private static Uri mCapturedImageURI = null;
-    private static File mTempPhotoFile;
+
     private static ValueCallback<Uri[]>  valueCallbacks = null;
     private static ValueCallback<Uri> valueCallback;
-    private static Uri cameraPhotoUri;
 
     private static final String MLUVII_LIBRARY_LOG = "MLUVII_LIBRARY";
 
@@ -196,25 +187,29 @@ public class MluviiLibrary {
         urlCallback = function;
     }
 
+    /**
+     * Nastaveni funkce, ktera se vola po nastaveni call parametru
+     * @param function Function to call
+     */
     public static void setParamSetFunc(UrlCallback function){
         paramSet = function;
     }
 
+    /**
+     * Nastaveni funkce, ktera se vola pri eventu o prubehu sezeni( sessionStarted, sessionEnded)
+     * @param function Function to call
+     */
     public static void setMluviiEventCallbackFunc(MluviiEventCallback function){ mluviiEventCallback = function;}
 
     /**
      * Tato funkce vraci value callbacks potrebne pro nahravani souboru
      */
     public static ValueCallback<Uri[]> getFilePathCallbacks() { return valueCallbacks; }
-    public static Uri getCameraCaptureUri() { return cameraPhotoUri; }
 
     /**
      * Tato funkce vraci value callback potrebny pro nahravani souboru
      */
     public static ValueCallback<Uri> getFilePathCallback() { return valueCallback; }
-
-    public static Uri getCameraUriCallback() { return cameraPhotoUri; }
-
 
     /**
      *  Nastaveni cisla, kterym se pozna pozadavek na sdileni souboru jdouci z mluvii library
@@ -237,10 +232,10 @@ public class MluviiLibrary {
     public static void runVideo(){
         if(Build.VERSION.SDK_INT  >= 19) {
             Log.d("MLUVII_SDK","Cool evaluate");
-            mluviiVideoWebView.evaluateJavascript("$owidget.openAppForSDK('av');", null);
+            mluviiVideoWebView.evaluateJavascript("$owidget.openAppOnCurrentPage('av');", null);
         } else {
             Log.d("MLUVII_SDK","Low evaluate");
-            mluviiVideoWebView.loadUrl("javascript: $owidget.openAppForSDK('av');");
+            mluviiVideoWebView.loadUrl("javascript: $owidget.openAppOnCurrentPage('av');");
         }
     }
 
@@ -360,9 +355,6 @@ public class MluviiLibrary {
                                                     * Otevre chatove URL v okne chatu
                                                     */
                                                    Log.d("MLUVII_URL_CHANGE","changing url to "+url);
-                                                   if(url.contains("localhost:44301")){
-                                                       url = url.replace("localhost:44301","10.0.2.2:44301");
-                                                   }
                                                    if(url.contains("GuestFrame?") || url.contains(CHAT_URL) || url.contains("widget") ) {
                                                        view.loadUrl(url);
                                                        return false;
@@ -393,6 +385,7 @@ public class MluviiLibrary {
                                                    }
                                                    CookieSyncManager.getInstance().sync();
                                                }
+
                                            }
             );
             /**
@@ -421,27 +414,12 @@ public class MluviiLibrary {
                     // make sure there is no existing message
                     if(Build.VERSION.SDK_INT >= 21) {
                         valueCallbacks = filePathCallback;
-//                        Intent intent = fileChooserParams.createIntent();
-//                        intent.addCategory(Intent.CATEGORY_OPENABLE);
-//                        intent.setType("*/*");
-//
-//                        Intent intent = new Intent(Intent.ACTION_PICK);
-//                        intent.setType("*/*");
-//                        intent.putExtra(Intent.EXTRA_MIME_TYPES, new String[]{"image/*", "application/pdf"}); // Include the file types you want to support
-//                        Intent chooserIntent = Intent.createChooser(intent, "Choose attachment option");
-
-                        Intent chooserIntent = Intent.createChooser(
-                                createAttachmentsIntent(), "Choose an option");
-//                        if (chooserIntent != null) {
-//                            startActivityForResult(chooserIntent, REQUEST_IMAGE_PICK);
-//                        }
-                        //mActivity.startActivityForResult(chooserIntent, REQUEST_FILE_PICKER);
+                        Intent intent = fileChooserParams.createIntent();
+                        intent.addCategory(Intent.CATEGORY_OPENABLE);
+                        intent.setType("*/*");
                         try {
                             Log.d("MLUVII","OPEN UPLOAD");
-                            //activity.startActivityForResult(intent, REQUEST_SELECT_FILE);
-                            if (chooserIntent != null) {
-                                activity.startActivityForResult(chooserIntent, REQUEST_SELECT_FILE);
-                            }
+                            activity.startActivityForResult(intent, REQUEST_SELECT_FILE);
                         } catch (ActivityNotFoundException e) {
                             Toast.makeText(activity, "Cannot open file chooser", Toast.LENGTH_LONG).show();
                             return false;
@@ -449,50 +427,6 @@ public class MluviiLibrary {
                     }
                     return true;
                 }
-                private Intent createAttachmentsIntent() {
-                    Intent attachmentsIntent = new Intent(Intent.ACTION_GET_CONTENT);
-                    attachmentsIntent.setType("*/*");
-                    attachmentsIntent.addCategory(Intent.CATEGORY_OPENABLE);
-
-                    Intent cameraIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-                    if (cameraIntent.resolveActivity(activity.getPackageManager()) != null) {
-                        try {
-                            mTempPhotoFile = createImageFile();
-                            Uri photoUri = FileProvider.getUriForFile(activity,
-                                    "com.webviewapp.provider", mTempPhotoFile);
-                            cameraIntent.putExtra(MediaStore.EXTRA_OUTPUT, photoUri);
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
-                    }
-
-                    Intent galleryIntent = new Intent(Intent.ACTION_PICK,
-                            MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
-                    galleryIntent.setType("image/*");
-
-                    Intent chooserIntent = Intent.createChooser(attachmentsIntent, "Choose an option");
-                    chooserIntent.putExtra(Intent.EXTRA_INITIAL_INTENTS, new Intent[] { cameraIntent, galleryIntent });
-
-                    return chooserIntent;
-                }
-
-                private File createImageFile() {
-                    String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
-                    String imageFileName = "JPEG_" + timeStamp + "_";
-                    File storageDir = activity.getExternalFilesDir(Environment.DIRECTORY_PICTURES);
-                    File imageFile = null;
-                    try {
-                        imageFile = File.createTempFile(
-                                imageFileName,
-                                ".jpg",
-                                storageDir
-                        );
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                    return imageFile;
-                }
-
 
                 protected void openFileChooser(ValueCallback<Uri> filePathCallback)
                 {
@@ -568,6 +502,14 @@ public class MluviiLibrary {
                                                    if(url.contains("GuestFrame?") || url.contains(CHAT_URL) || url.contains("widget") ) {
                                                        view.loadUrl(url);
                                                        return false;
+                                                   } else if (urlCallback != null) {
+                                                       urlCallback.url = url;
+                                                       try {
+                                                           urlCallback.call();
+                                                       } catch (Exception e) {
+                                                           e.printStackTrace();
+                                                       }
+                                                       return true;
                                                    } else {
                                                        /**
                                                         * Otevre jine URL (obrazek, file ...)
@@ -587,6 +529,11 @@ public class MluviiLibrary {
                                                        mluviiWebView.loadUrl("javascript: "+injectedString);
                                                        runChat();
                                                    }
+                                               }
+
+                                               @Override
+                                               public void onReceivedSslError(WebView view, SslErrorHandler handler, SslError error) {
+                                                   handler.proceed(); // Ignore SSL certificate errors
                                                }
                                            }
             );
@@ -615,35 +562,13 @@ public class MluviiLibrary {
                     // make sure there is no existing message
                     if(Build.VERSION.SDK_INT >= 21) {
                         valueCallbacks = filePathCallback;
-//
-//                        Intent intent = fileChooserParams.createIntent();
-//                        intent.addCategory(Intent.CATEGORY_OPENABLE);
-//                        intent.setType("*/*");
 
-                        // valueCallbacks = filePathCallback;
-
-                        //Intent i = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-                        // i.addCategory(Intent.CATEGORY_OPENABLE);
-                        //i.setType("*/*");
-                        //activity.startActivityForResult(i, REQUEST_SELECT_FILE);
-
-//                        Intent chooserIntent = new Intent(Intent.ACTION_CHOOSER);
-//
-//                        Intent actionnIntent = new Intent(Intent.ACTION_GET_CONTENT);
-//                        actionnIntent.setType("image/*");
-//                        actionnIntent.addCategory(Intent.CATEGORY_OPENABLE);
-//
-//                        chooserIntent.putExtra(Intent.EXTRA_INTENT, actionnIntent);
-//                        chooserIntent.putExtra(Intent.EXTRA_TITLE, "Choose Upload Option");
-
-                        Intent chooserIntent = Intent.createChooser(
-                                createAttachmentsIntent(), "Choose an option");
-
-                        // Verify if there's a suitable activity to handle the intent
-
+                        Intent intent = fileChooserParams.createIntent();
+                        intent.addCategory(Intent.CATEGORY_OPENABLE);
+                        intent.setType("*/*");
                         try {
                             Log.d("MLUVII","OPEN UPLOAD");
-                            activity.startActivityForResult(chooserIntent, REQUEST_SELECT_FILE);
+                            activity.startActivityForResult(intent, REQUEST_SELECT_FILE);
                         } catch (ActivityNotFoundException e) {
                             Toast.makeText(activity, "Cannot open file chooser", Toast.LENGTH_LONG).show();
                             return false;
@@ -651,52 +576,6 @@ public class MluviiLibrary {
                     }
                     return true;
                 }
-
-
-                private Intent createAttachmentsIntent() {
-                    Intent attachmentsIntent = new Intent(Intent.ACTION_GET_CONTENT);
-                    attachmentsIntent.setType("*/*");
-                    attachmentsIntent.addCategory(Intent.CATEGORY_OPENABLE);
-
-                    Intent cameraIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-                    if (cameraIntent.resolveActivity(activity.getPackageManager()) != null) {
-                        try {
-                            mTempPhotoFile = createImageFile();
-                            cameraPhotoUri = FileProvider.getUriForFile(activity,
-                                    "com.webviewapp.provider", mTempPhotoFile);
-                           cameraIntent.putExtra(MediaStore.EXTRA_OUTPUT, cameraPhotoUri);
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
-                    }
-
-                    Intent galleryIntent = new Intent(Intent.ACTION_PICK,
-                            MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
-                    galleryIntent.setType("image/*");
-
-                    Intent chooserIntent = Intent.createChooser(attachmentsIntent, "Choose an option");
-                    chooserIntent.putExtra(Intent.EXTRA_INITIAL_INTENTS, new Intent[] { cameraIntent, galleryIntent });
-
-                    return chooserIntent;
-                }
-
-                private File createImageFile() {
-                    String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
-                    String imageFileName = "JPEG_" + timeStamp + "_";
-                    File storageDir = activity.getExternalFilesDir(Environment.DIRECTORY_PICTURES);
-                    File imageFile = null;
-                    try {
-                        imageFile = File.createTempFile(
-                                imageFileName,
-                                ".jpg",
-                                storageDir
-                        );
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                    return imageFile;
-                }
-
 
                 protected void openFileChooser(ValueCallback<Uri> filePathCallback)
                 {
@@ -772,6 +651,14 @@ public class MluviiLibrary {
                                                         if(url.contains("GuestFrame?") || url.contains(CHAT_URL) || url.contains("widget") ) {
                                                             view.loadUrl(url);
                                                             return false;
+                                                        } else if (urlCallback != null) {
+                                                            urlCallback.url = url;
+                                                            try {
+                                                                urlCallback.call();
+                                                            } catch (Exception e) {
+                                                                e.printStackTrace();
+                                                            }
+                                                            return true;
                                                         } else {
                                                             /**
                                                              * Otevre jine URL (obrazek, file ...)
@@ -790,6 +677,12 @@ public class MluviiLibrary {
                                                             mluviiVideoWebView.loadUrl("javascript: "+injectedString);
                                                         }
                                                     }
+
+                                                    @Override
+                                                    public void onReceivedSslError(WebView view, SslErrorHandler handler, SslError error) {
+                                                        handler.proceed(); // Ignore SSL certificate errors
+                                                    }
+
                                                 }
             );
             /**
@@ -802,8 +695,8 @@ public class MluviiLibrary {
                     if(Build.VERSION.SDK_INT  >= 21) {
                         Log.d("MLUVII","Permission request granted, " +request.getResources());
 
-                        //request.grant(request.getResources());
-                        request.grant(new String[]{PermissionRequest.RESOURCE_VIDEO_CAPTURE, PermissionRequest.RESOURCE_AUDIO_CAPTURE});
+                        request.grant(request.getResources());
+                        //request.grant(new String[]{PermissionRequest.RESOURCE_VIDEO_CAPTURE, PermissionRequest.RESOURCE_AUDIO_CAPTURE});
                     }
                 }
 

@@ -1,20 +1,29 @@
 package mluviipoc.mluvii.com.webviewapp;
 
+import static mluviipoc.mluvii.com.webviewapp.MluviiLibrary.REQUEST_SELECT_FILE;
+import static mluviipoc.mluvii.com.webviewapp.MluviiLibrary.getCameraCaptureUri;
+import static mluviipoc.mluvii.com.webviewapp.MluviiLibrary.getCameraUriCallback;
+
 import android.Manifest;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
+import android.net.Uri;
 import android.os.Build;
-import android.support.v4.app.ActivityCompat;
-import android.support.v4.content.ContextCompat;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
+import android.webkit.ValueCallback;
+import android.webkit.WebChromeClient;
 import android.webkit.WebView;
 import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
+
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 
 import java.util.concurrent.Callable;
 
@@ -56,6 +65,8 @@ public class MainActivity extends AppCompatActivity {
      */
     private Button videoBtn = null;
 
+    private ValueCallback<Uri[]> uploadMessages = null;
+    private ValueCallback<Uri> uploadMessage = null;
     /**
      * CHAT_URL points on the chat widget. There can be more urls changed within the client app to direst
      * chat to different operator groups/different widgets.
@@ -229,8 +240,6 @@ public class MainActivity extends AppCompatActivity {
 
         videoWebView.setLayoutParams(mluviiParams);
 
-
-
         /**
          * Tlaciko, ktere zobrazuje stav Widgetu - Seda, nespojeno se serverem - Cervena, offline - Zluta, busy - Zelena, online
          */
@@ -294,6 +303,35 @@ public class MainActivity extends AppCompatActivity {
         layout.addView(videoWebView);
         layout.setLayoutParams(params);
         setContentView(layout);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
+        {
+            if (requestCode == REQUEST_SELECT_FILE)    {
+                uploadMessages = MluviiLibrary.getFilePathCallbacks();
+
+                if (uploadMessages == null)
+                    return;
+                if (data == null && getCameraCaptureUri() != null){
+                    uploadMessages.onReceiveValue(new Uri[]{getCameraCaptureUri()});
+                }
+                else
+                    uploadMessages.onReceiveValue(WebChromeClient.FileChooserParams.parseResult(resultCode, data));
+
+                uploadMessages = null;
+            }
+        } else {
+            uploadMessage = MluviiLibrary.getFilePathCallback();
+            if (null == uploadMessage) return;
+            Uri result = data == null || resultCode != MainActivity.RESULT_OK ? null : (data.getData() != null ? data.getData() : getCameraCaptureUri());
+            uploadMessage.onReceiveValue(result);
+            uploadMessage = null;
+        }
+
     }
 }
 
