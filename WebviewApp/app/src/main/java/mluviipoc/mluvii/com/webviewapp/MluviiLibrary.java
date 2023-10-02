@@ -278,6 +278,48 @@ public class MluviiLibrary {
         return builder.toString();
     }
 
+    private static String createUrlString(String url, String companyId, String tenantId, String presetName, String language, String scope){
+        StringBuilder builder = new StringBuilder();
+        builder.append("https://");
+        builder.append(url);
+        builder.append("/MobileSdkWidget");
+        builder.append("?c=");
+        builder.append(companyId);
+        if(tenantId != null) {
+            builder.append("&t=");
+            try {
+                builder.append(URLEncoder.encode(tenantId,"utf-8"));
+            } catch (UnsupportedEncodingException e) {
+                builder.append(tenantId);
+            }
+        }
+        if(language != null) {
+            builder.append("&l=");
+            try {
+                builder.append(URLEncoder.encode(language,"utf-8"));
+            } catch (UnsupportedEncodingException e) {
+                builder.append(language);
+            }
+        }
+        if(presetName != null){
+            builder.append("&p=");
+            try {
+                builder.append(URLEncoder.encode(presetName,"utf-8"));
+            } catch (UnsupportedEncodingException e) {
+                builder.append(presetName);
+            }
+        }
+        if(scope != null){
+            builder.append("&s=");
+            try {
+                builder.append(URLEncoder.encode(scope,"utf-8"));
+            } catch (UnsupportedEncodingException e) {
+                builder.append(scope);
+            }
+        }
+        return builder.toString();
+    }
+
     public static void resetUrl(){
         Log.d("MLUVII_URL_LIB", "RESET_URL");
         Handler handler = new Handler(Looper.getMainLooper());
