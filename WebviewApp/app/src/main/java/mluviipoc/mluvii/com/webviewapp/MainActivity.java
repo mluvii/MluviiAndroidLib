@@ -2,6 +2,7 @@ package mluviipoc.mluvii.com.webviewapp;
 
 import static mluviipoc.mluvii.com.webviewapp.MluviiLibrary.mCameraPhotoPath;
 
+import android.Manifest;
 import android.app.Activity;
 import android.content.ClipData;
 import android.content.Context;
@@ -25,6 +26,8 @@ import android.widget.RelativeLayout;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 import androidx.core.content.FileProvider;
 
 import java.io.File;
@@ -34,6 +37,7 @@ import java.util.Locale;
 import java.util.concurrent.Callable;
 
 public class MainActivity extends AppCompatActivity implements FileChooserInterface {
+    private static final int REQUEST_CAMERA_PERMISSION = 654;
 
     private static final String TAG = "MLUVII WEBVIEW APP";
     /**
@@ -55,8 +59,13 @@ public class MainActivity extends AppCompatActivity implements FileChooserInterf
     ActivityResultLauncher<Intent> someActivityResultLauncher = registerForActivityResult(
             new ActivityResultContracts.StartActivityForResult(),
             result -> {
+                if (result.getResultCode() == Activity.RESULT_CANCELED) {
+                    uploadMessages.onReceiveValue(null);
+                    uploadMessages = null;
+
+                }else
                 if (result.getResultCode() == Activity.RESULT_OK) {
-                    Uri[] results = null;
+                    Uri[] results;
 
                     // Check that the response is a good one
                     if (result.getData() == null || (result.getData().getDataString() == null && result.getData().getClipData() == null)) {
@@ -104,6 +113,25 @@ public class MainActivity extends AppCompatActivity implements FileChooserInterf
         super.onCreate(savedInstanceState);
 
         WebView.setWebContentsDebuggingEnabled(true);
+
+        if (ContextCompat.checkSelfPermission(this,
+                Manifest.permission.CAMERA)
+                != PackageManager.PERMISSION_GRANTED) {
+
+            if (ActivityCompat.shouldShowRequestPermissionRationale(this,
+                    Manifest.permission.CAMERA)) {
+                //Can add explanation why do you need this specific permissions
+                ActivityCompat.requestPermissions(this,
+                        new String[]{Manifest.permission.CAMERA, Manifest.permission.RECORD_AUDIO},
+                        REQUEST_CAMERA_PERMISSION);
+
+            } else {
+                // No explanation needed; request the permission
+                ActivityCompat.requestPermissions(this,
+                        new String[]{Manifest.permission.CAMERA, Manifest.permission.RECORD_AUDIO},
+                        REQUEST_CAMERA_PERMISSION);
+            }
+        }
 
         /**
          * Callback na Online stav z widgetu
