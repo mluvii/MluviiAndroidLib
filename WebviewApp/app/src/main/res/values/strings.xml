@@ -1,3 +1,9 @@
 <resources>
     <string name="app_name">WebviewApp</string>
+    <string name="camera_permission_disable">To captures photos, video and scanner, allow access to your camera. Tap Settings > Permission and turn camera on.</string>
+    <string name="media_file_permission_disable">To select media, allow access to your device\'s photos, media and files.</string>
+    <string name="record_voice_permission_disable">To record your voice, Allow access to your microphone.</string>
+    <string name="setting">Setting</string>
+    <string name="lbl_not_now">Not now</string>
+
 </resources>

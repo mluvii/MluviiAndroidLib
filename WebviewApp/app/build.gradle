@@ -1,22 +1,24 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 31
+    namespace "mluviipoc.mluvii.com.webviewapp"
+     compileSdk 34
     defaultConfig {
         applicationId "mluviipoc.mluvii.com.webviewapp"
-        minSdkVersion 19
-        targetSdkVersion 31
+        minSdk 19
+        targetSdk 34
         versionCode 1
         versionName "1.0"
-        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
-        multiDexEnabled true
-    }
+        testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
+     }
     repositories {
         flatDir {
             dirs 'libs'
         }
     }
-
+    buildFeatures {
+        buildConfig true
+    }
     buildTypes {
         release {
             minifyEnabled false
@@ -27,11 +29,10 @@ android {
 
 dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
-    implementation 'com.android.support:appcompat-v7:26.1.0'
-    implementation 'com.android.support.constraint:constraint-layout:1.0.2'
-    testImplementation 'junit:junit:4.12'
-    implementation 'androidx.core:core:1.0.0'
-    androidTestImplementation 'com.android.support.test:runner:1.0.1'
-    androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.1'
-    implementation files('src/main/java/mluviipoc/libs/mluviiLib.jar')
-}
+    implementation 'androidx.appcompat:appcompat:1.6.1'
+    implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
+//    implementation files('libs/mluviiLib.jar')
+    testImplementation 'junit:junit:4.13.2'
+     androidTestImplementation 'androidx.test.ext:junit:1.1.5'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
+ }
